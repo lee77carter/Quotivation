@@ -1,24 +1,24 @@
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import Quotes from "./components/quotes/Quotes";
-import FavoriteQuotes from "./components/quotes/FavoriteQuotes";
-import Message from "./components/Message";
 import { Loader } from "react-feather";
+import FavoriteQuotes from "./components/quotes/FavoriteQuotes";
+import Quotes from "./components/quotes/Quotes";
+import Message from "./components/Message";
 import "./App.css";
 
 function App() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [category, setCatagory] = useState("All");
-  const [favoriteQuotes, setFavoriteQuotes] = useState([]);
-  const [messageText, setMessageText] = useState("");
+  const [category, setCategory] = useState("All");
   const [showMessage, setShowMessage] = useState(false);
-  const maxFaves = 3;
+  const [messageText, setMessageText] = useState("");
+  const [favoriteQuotes, setFavoriteQuotes] = useState(JSON.parse(window.localStorage.getItem("favoriteQuotes")) || []);
   const quotesUrl =
     "https://gist.githubusercontent.com/skillcrush-curriculum/6365d193df80174943f6664c7c6dbadf/raw/1f1e06df2f4fc3c2ef4c30a3a4010149f270c0e0/quotes.js";
   const categories = ["All", "Leadership", "Empathy", "Motivation", "Learning", "Success", "Empowerment"];
 
+  const maxFaves = 3;
 
   const fetchQuotes = async () => {
     try {
@@ -36,55 +36,60 @@ function App() {
     fetchQuotes();
   }, []);
 
-  const handleCategoryChange = (e) => {
-    setCatagory(e.target.value);
-  };
+  useEffect(() => {
+    window.localStorage.setItem("favoriteQuotes", JSON.stringify(favoriteQuotes));
+  }, [favoriteQuotes]);
 
-  const filterQuotes = category !== "All" ? quotes.filter(quotes => quotes.categories.includes(category)) : quotes; /* conditional */
+  const filteredQuotes = category !== "All" ? quotes.filter((quote) => quote.categories.includes(category)) : quotes;
+
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+  };
 
   const addToFavorites = (quoteId) => {
     const selectedQuote = quotes.find((quote) => quote.id === quoteId);
-
-    const alreadyFavorite = favoriteQuotes.find((favorite) => favorite.id === selectedQuote.id)
+    const alreadyFavorite = favoriteQuotes.find((favorite) => favorite.id === selectedQuote.id);
 
     if (alreadyFavorite) {
-      setMessageText("This Favorite is already saved");
-      setShowMessage(true)
-    } else if (favoriteQuotes.length < maxFaves) {
-      setFavoriteQuotes([...favoriteQuotes, selectedQuote])
-      setMessageText("Added to Favorites!");
-      setShowMessage(true)
+      removeFromFavorites(quoteId);
     } else {
-      setMessageText("Sorry, max quotes have been reached.");
-      setShowMessage(true)
+      if (favoriteQuotes.length < maxFaves) {
+        setMessageText("Added to Favorites!");
+        setShowMessage(true);
+        setFavoriteQuotes([...favoriteQuotes, selectedQuote]);
+      } else {
+        setMessageText("Max number of favorite quotes reached. Remove one to add another.");
+        setShowMessage(true);
+      }
     }
-  }
-
-  const removeMessage = () => {
-    setShowMessage(false);
-  }
+  };
 
   const removeFromFavorites = (quoteId) => {
     const updatedFavorites = favoriteQuotes.filter((quote) => quote.id !== quoteId);
     setFavoriteQuotes(updatedFavorites);
   };
 
+  const removeMessage = () => {
+    setShowMessage(false);
+  };
+
   return (
     <div className='App'>
+      {showMessage && <Message messageText={messageText} removeMessage={removeMessage} />}
       <Header />
-      {showMessage && <Message messageText={messageText} removeMessage={removeMessage} /> }
       <main>
-      <FavoriteQuotes favoriteQuotes={favoriteQuotes} maxFaves={maxFaves} removeFromFavorites={removeFromFavorites} />
+        <FavoriteQuotes favoriteQuotes={favoriteQuotes} maxFaves={maxFaves} removeFromFavorites={removeFromFavorites} />
+
         {loading ? (
           <Loader />
         ) : (
           <Quotes
-            filteredQuotes={filterQuotes}
-            categories={categories}
-            category={category}
-            handleCategoryChange={handleCategoryChange}
+            filteredQuotes={filteredQuotes}
             addToFavorites={addToFavorites}
             favoriteQuotes={favoriteQuotes}
+            category={category}
+            categories={categories}
+            handleCategoryChange={handleCategoryChange}
           />
         )}
       </main>
