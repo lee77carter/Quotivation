@@ -4,6 +4,8 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 # Is it fantastic? No - it's better - it's ✨ QUOTETASTIC! ✨
 
+Visit the [Quotative](https://special-quotes.netlify.app/) react app here.
+
 ### Features:
 
 - Fetch quotes from API
